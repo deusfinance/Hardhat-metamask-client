@@ -74,7 +74,7 @@ export class MetamaskClient {
                     console.log("Going to run transaction: " + txId);
                     if (this.estimateGas)
                         transaction.gasLimit = await signer.provider?.estimateGas(transaction);
-                    await this.sendTransactions([new TransactionWrapper(txId, transaction)]);
+                    await this._sendTransactions([new TransactionWrapper(txId, transaction)]);
                     return await poll(async () => {
                         console.log("Checking for transaction: " + txId);
                         if (!this.txHashMap.has(txId)) return undefined;
@@ -97,7 +97,11 @@ export class MetamaskClient {
         });
     }
 
-    public async sendTransactions(transactions: TransactionWrapper[]) {
+    public async sendTransaction(transaction: any) {
+        return this._sendTransactions([new TransactionWrapper(this.id++, transaction)]);
+    }
+
+    private async _sendTransactions(transactions: TransactionWrapper[]) {
         this.filledTemplate = Eta.render(
             syncReadFile('template.html'), {
                 transactions: transactions,

@@ -1,6 +1,6 @@
 {
     "name": "hardhat_metamask_client",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "Small project  that lets you sign your transactions in hardhat script via metamask",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
