@@ -1,21 +1,41 @@
 # Hardhat Metamask Client
 
-To deploy a contract or run a transaction, Hardhat requires you to hardcode your account private key which may lead to some security issues.
-This plugin provides an ethers signer that will redirect you to your default browser and use the metamask extention on that to run your desired trasnaction.
+The Hardhat Metamask Client is a secure solution that addresses the issues associated with hardcoded account private keys in Hardhat during contract deployment or transaction execution. It incorporates an ethers signer that redirects you to your default browser, leveraging the metamask extension to execute your transaction.
+
+## Installation
+To install the Hardhat Metamask Client, use the following command:
+```bash
+npm install hardhat-metamask-client
+```
 
 ## Usage
+To utilize the Metamask Client, create a new instance by providing a configuration object. Here's an example:
 
 ```ts
-import config from '../hardhat.config';
-
-let client = new MetamaskClient(config, "fantom");
-
+let client = new MetamaskClient(config);
 ```
-The first parameter is the HardhatUserConfig object which is typically defined in ```hardhat.config.ts``` file.
-As the second parameter, you should specify the network name in which you would like to run your transaction. This network should be configured in
-the config object for example if you want to run a transaction in ```xyz``` network your config should look like this:
+
+The configuration object should follow this format:
 
 ```ts
+export type ClientConfig = {
+    hardhatConfig?: any,
+    networkName?: any,
+    network?: any,
+    ethers: any,
+}
+```
+
+Note that the `ethers` field is mandatory. For other parameters, you have two possible approaches:
+
+### 1. Providing `hardhatConfig` and `networkName`
+
+The `hardhatConfig` parameter is the HardhatUserConfig object, usually defined in the `hardhat.config.ts` file.
+
+The `networkName` should represent the network in which you want to execute your transaction. This network must be configured in the config object. For instance, if you wish to execute a transaction in the `xyz` network, your configuration should look as follows:
+
+```ts
+// hardhat.configuration.ts
 export const config: HardhatUserConfig = {
     solidity: "...",
     networks: {
@@ -31,17 +51,36 @@ export const config: HardhatUserConfig = {
         },
     }
 };
-```
-The configuration must include a URL, chainId, and at least one account, even though the account won't be used to sign transactions.
-Thus it can be any random private key if it is only going to be used for signing transactions
 
-The example below shows how you can deploy a contract using this metamask signer
+// sampleScript.ts
+import config from '../hardhat.config';
+
+let client = new MetamaskClient(config, "xyz");
+```
+
+### 2. Providing the `network`
+
+You can also directly provide the `network` object during task creation.
 
 ```ts
-let client = new MetamaskClient(config, "fantom");
+task("x", "")
+    .setAction(async ({logData, reportGas}, {ethers, network}) => {
+        let client: any = new MetamaskClient({ethers: ethers, network: network});
+    });
+```
+
+Please note that the network configuration must include a URL, chainId, and at least one account. However, since this account won't be used to sign transactions, it can be any random private key if it's used only for signing transactions.
+
+Here's an example illustrating how to deploy a contract using the Metamask signer:
+
+```ts
+let client = new MetamaskClient(config);
 const Box = await ethers.getContractFactory("Box", {
     signer: await client.getSigner()
 });
 await Box.deploy();
-client.close();  // Should be closed in order for the program to stop running
+client.close();  // Must be closed for the program to cease execution
 ```
+
+## Concluding Remarks
+When you've completed your tasks, ensure to call `client.close()`. This stops the program from running continuously. The Hardhat Metamask Client offers a safer and more streamlined solution to contract deployment and transaction execution. Enjoy your secure and efficient development!

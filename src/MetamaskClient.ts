@@ -1,15 +1,13 @@
-import { BaseProvider, TransactionRequest } from '@ethersproject/providers';
+import {BaseProvider} from '@ethersproject/providers';
 import "@nomiclabs/hardhat-ethers";
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import "@typechain/hardhat";
 import bodyParser from "body-parser";
 import * as Eta from "eta";
-import { Deferrable, poll } from 'ethers/lib/utils';
-import express, { Express, Request, Response } from 'express';
-import { readFileSync } from 'fs';
-import { ethers } from "hardhat";
+import express, {Express, Request, Response} from 'express';
+import {readFileSync} from 'fs';
 import open from 'open';
-import { join } from 'path';
+import {join} from 'path';
 
 function syncReadFile(filename: string) {
     return readFileSync(join(__dirname, filename), 'utf-8');
@@ -24,6 +22,13 @@ export class TransactionWrapper {
     }
 }
 
+export type ClientConfig = {
+    hardhatConfig?: any,
+    networkName?: any,
+    network?: any,
+    ethers: any,
+}
+
 export class MetamaskClient {
     private filledTemplate: string = '';
     private readonly port: number;
@@ -31,12 +36,23 @@ export class MetamaskClient {
     private txHashMap = new Map<number, string>();
     network: any;
     server: any;
+    ethers: any;
 
-    constructor(private config: any, network: string, private estimateGas: boolean = false, defaultServerPort: number = 8989) {
-        if (config.networks == null || config.networks![network] == null)
-            throw new Error("Requested network is not configured: " + network);
-        this.network = config.networks![network];
-        this.network.name = network;
+    constructor(config: ClientConfig, private estimateGas: boolean = false, defaultServerPort: number = 8989) {
+        this.ethers = config.ethers;
+
+        if (config.hardhatConfig == null && config.network == null)
+            throw new Error("Invalid configuration");
+
+        if (config.network == null) {
+            if (config.hardhatConfig.networks == null || config.hardhatConfig.networks![config.networkName] == null)
+                throw new Error("Requested network is not configured: " + config.networkName);
+            this.network = config.hardhatConfig.networks![config.networkName];
+            this.network.name = config.networkName;
+        } else {
+            this.network = config.network.config;
+            this.network.name = config.network.name;
+        }
 
         const app: Express = express();
         this.port = process.env.PORT ? Number(process.env.PORT) : defaultServerPort;
@@ -63,10 +79,10 @@ export class MetamaskClient {
 
     public async getSigner(): Promise<SignerWithAddress> {
         return new Promise<SignerWithAddress>((resolve, reject) => {
-            ethers.getSigners().then((signers: any[]) => {
+            this.ethers.getSigners().then((signers: any[]) => {
                 let signer = signers[0];
 //                let f = signer.sendTransaction;
-                let x = async (transaction: Deferrable<TransactionRequest>) => {
+                let x = async (transaction: any) => {
 //                    let out = await f.call(signer, transaction);
 //                    console.log(out);
 //                    return Promise.resolve(out);
@@ -75,27 +91,27 @@ export class MetamaskClient {
                     if (this.estimateGas)
                         transaction.gasLimit = await signer.provider?.estimateGas(transaction);
                     await this._sendTransactions([new TransactionWrapper(txId, transaction)]);
-                    return await poll(async () => {
-                        console.log("Checking for transaction: " + txId);
-                        if (!this.txHashMap.has(txId)) return undefined;
-                        let hash = this.txHashMap.get(txId)!;
-                        const tx = await signer.provider!.getTransaction(hash);
-                        if (tx === null) return undefined;
-                        console.log('Transaction');
-                        let result = (signer.provider! as BaseProvider)._wrapTransaction(tx, hash);
-                        console.log(result);
-                        return result;
-                    }, {
-                        interval: 5000,
-                        ceiling: 5000
+                    return new Promise(async (resolve, reject) => {
+                        let checkInterval = setInterval(async () => {
+                            console.log("Checking for transaction: " + txId);
+                            if (!this.txHashMap.has(txId)) return;
+                            let hash = this.txHashMap.get(txId)!;
+                            const tx = await signer.provider!.getTransaction(hash);
+                            if (tx === null) return;
+                            console.log('Transaction');
+                            let result = (signer.provider! as BaseProvider)._wrapTransaction(tx, hash);
+                            console.log(result);
+                            clearInterval(checkInterval); // Important to clear interval after the operation is done
+                            resolve(result);
+                        }, 5000); // Repeat every 5 seconds
                     });
                 }
                 signer.sendTransaction = x as any;
-
                 resolve(signer);
             });
         });
     }
+
 
     public async sendTransaction(transaction: any) {
         return this._sendTransactions([new TransactionWrapper(this.id++, transaction)]);
