@@ -55,7 +55,10 @@ export const config: HardhatUserConfig = {
 // sampleScript.ts
 import config from '../hardhat.config';
 
-let client = new MetamaskClient(config, "xyz");
+let client = new MetamaskClient({
+    hardhatConfig: config,
+    networkName: "xyz",
+});
 ```
 
 ### 2. Providing the `network`
