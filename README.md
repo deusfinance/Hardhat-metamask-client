@@ -5,7 +5,7 @@ The Hardhat Metamask Client is a secure solution that addresses the issues assoc
 ## Installation
 To install the Hardhat Metamask Client, use the following command:
 ```bash
-npm install hardhat-metamask-client
+npm install hardhat_metamask_client
 ```
 
 ## Usage
