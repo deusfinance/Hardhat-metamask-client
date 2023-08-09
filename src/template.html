@@ -17,7 +17,7 @@
                     error<%= tx.id %>.style.display = "flex";
                     error<%= tx.id %>.innerText = '<%= tx.error %>';
                 <% } %>
-                    
+
                 <% if (tx.warning != null) { %>
                     let warning<%= tx.id %> = document.getElementById("warningBox<%= tx.id %>");
                     warning<%= tx.id %>.style.display = "flex";
@@ -166,23 +166,16 @@
         }
 
         .title {
-            background-image: linear-gradient(135deg, #00a8f4, #15ede2);
-            background-clip: text;
             font-size: 3rem;
-            -webkit-text-fill-color: transparent;
+            color: whitesmoke;
         }
 
         .transactionLabel {
-            background-image: linear-gradient(135deg, #00a8f4, #15ede2);
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: whitesmoke;
         }
 
         .subtitle {
-            background-image: linear-gradient(135deg, #00a8f4, #15ede2);
-            background-clip: text;
-            font-size: 0.9rem;
-            -webkit-text-fill-color: transparent;
+            color: whitesmoke;
         }
 
         .errorBox {
