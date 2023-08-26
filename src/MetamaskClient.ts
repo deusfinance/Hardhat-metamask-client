@@ -1,6 +1,6 @@
 import {BaseProvider} from '@ethersproject/providers';
 import "@nomiclabs/hardhat-ethers";
-import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {HardhatEthersSigner} from "@nomicfoundation/hardhat-ethers/signers";
 import "@typechain/hardhat";
 import bodyParser from "body-parser";
 import * as Eta from "eta";
@@ -77,8 +77,8 @@ export class MetamaskClient {
         this.server.close();
     }
 
-    public async getSigner(): Promise<SignerWithAddress> {
-        return new Promise<SignerWithAddress>((resolve, reject) => {
+    public async getSigner(): Promise<HardhatEthersSigner> {
+        return new Promise<HardhatEthersSigner>((resolve, reject) => {
             this.ethers.getSigners().then((signers: any[]) => {
                 let signer = signers[0];
 //                let f = signer.sendTransaction;
