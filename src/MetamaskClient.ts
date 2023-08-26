@@ -1,6 +1,6 @@
 import {BaseProvider} from '@ethersproject/providers';
 import "@nomicfoundation/hardhat-ethers";
-import {HardhatEthersSigner} from "@nomicfoundation/hardhat-ethers/signers";
+import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers";
 import "@typechain/hardhat";
 import bodyParser from "body-parser";
 import * as Eta from "eta";
@@ -77,8 +77,8 @@ export class MetamaskClient {
         this.server.close();
     }
 
-    public async getSigner(): Promise<HardhatEthersSigner> {
-        return new Promise<HardhatEthersSigner>((resolve, reject) => {
+    public async getSigner(): Promise<SignerWithAddress> {
+        return new Promise<SignerWithAddress>((resolve, reject) => {
             this.ethers.getSigners().then((signers: any[]) => {
                 let signer = signers[0];
 //                let f = signer.sendTransaction;
@@ -99,7 +99,7 @@ export class MetamaskClient {
                             const tx = await signer.provider!.getTransaction(hash);
                             if (tx === null) return;
                             console.log('Transaction');
-                            let result = (signer.provider! as BaseProvider)._wrapTransaction(tx, hash);
+                            let result = (signer.provider! as any)._wrapTransactionResponse(tx);
                             console.log(result);
                             clearInterval(checkInterval); // Important to clear interval after the operation is done
                             resolve(result);
