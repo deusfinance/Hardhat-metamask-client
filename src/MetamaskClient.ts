@@ -1,5 +1,5 @@
 import {BaseProvider} from '@ethersproject/providers';
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import {HardhatEthersSigner} from "@nomicfoundation/hardhat-ethers/signers";
 import "@typechain/hardhat";
 import bodyParser from "body-parser";
