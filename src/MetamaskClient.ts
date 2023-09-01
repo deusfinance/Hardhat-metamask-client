@@ -1,4 +1,5 @@
 import {BaseProvider} from '@ethersproject/providers';
+import hre, { ethers } from "hardhat";
 import "@nomicfoundation/hardhat-ethers";
 import {SignerWithAddress} from "@nomicfoundation/hardhat-ethers/signers";
 import "@typechain/hardhat";
@@ -22,38 +23,14 @@ export class TransactionWrapper {
     }
 }
 
-export type ClientConfig = {
-    hardhatConfig?: any,
-    networkName?: any,
-    network?: any,
-    ethers: any,
-}
-
 export class MetamaskClient {
     private filledTemplate: string = '';
     private readonly port: number;
     private id = 1;
     private txHashMap = new Map<number, string>();
-    network: any;
     server: any;
-    ethers: any;
 
-    constructor(config: ClientConfig, private estimateGas: boolean = false, defaultServerPort: number = 8989) {
-        this.ethers = config.ethers;
-
-        if (config.hardhatConfig == null && config.network == null)
-            throw new Error("Invalid configuration");
-
-        if (config.network == null) {
-            if (config.hardhatConfig.networks == null || config.hardhatConfig.networks![config.networkName] == null)
-                throw new Error("Requested network is not configured: " + config.networkName);
-            this.network = config.hardhatConfig.networks![config.networkName];
-            this.network.name = config.networkName;
-        } else {
-            this.network = config.network.config;
-            this.network.name = config.network.name;
-        }
-
+    constructor(private estimateGas: boolean = false, defaultServerPort: number = 8989) {
         const app: Express = express();
         this.port = process.env.PORT ? Number(process.env.PORT) : defaultServerPort;
         app.use(bodyParser.urlencoded({extended: false}));
@@ -79,7 +56,8 @@ export class MetamaskClient {
 
     public async getSigner(): Promise<SignerWithAddress> {
         return new Promise<SignerWithAddress>((resolve, reject) => {
-            this.ethers.getSigners().then((signers: any[]) => {
+            // hook hardhat's `ethers` object
+            ethers.getSigners().then((signers: any[]) => {
                 let signer = signers[0];
 //                let f = signer.sendTransaction;
                 let x = async (transaction: any) => {
@@ -121,8 +99,11 @@ export class MetamaskClient {
         this.filledTemplate = Eta.render(
             syncReadFile('template.html'), {
                 transactions: transactions,
-                network: this.network.name,
-                chainId: "0x" + (this.network.chainId).toString(16),
+                network: hre.network.name,
+                // `31337` is the chainId of default `localhost` network. Reference: https://hardhat.org/hardhat-network/docs/reference#chainid
+                // `localhost` network's chainId is not explicitly configured in `hardhat.config.ts`
+                // so we use `31337` as default value
+                chainId: "0x" + (hre.network.config.chainId ?? 31337).toString(16),
                 serverPort: this.port
             })! as string;
         open(`http://localhost:${this.port}/send-transactions`);
